@@ -1,24 +1,66 @@
 ---
-
-
-title: "prueba1"
-author: "Hernan"
-date: "15 de noviembre de 2015"
-output: html_document
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Loading and preprocessing the data
+```{r}
+activity <- read.csv2("activity.csv", header=TRUE, sep=",", dec=",",stringsAsFactors = FALSE)
+activity$date1 <- as.Date(activity$date,"%Y-%m-%d")
+
+```
+
+
+
+
+## What is mean total number of steps taken per day?
+```{r}
+sum(activity[activity$steps>0,1],na.rm = TRUE)
+
+mean(activity[activity$steps>0,1],na.rm = TRUE)
+median(activity[activity$steps>0,1],na.rm = TRUE)
+hist(activity[activity$steps>0,1])
+
+
+```
+
+
+## What is the average daily activity pattern?
+
 
 ```{r}
-summary(cars)
+actDiaria <- aggregate(activity[!is.na(activity$steps) & activity$steps>0 ,1], by=list(activity[!is.na(activity$steps) & activity$steps>0,4]),FUN=mean)
+plot(actDiaria$Group.1, actDiaria$x,type = "l")
+activity[match(max(activity$steps,na.rm = TRUE),activity$steps),]$interval
+
+```
+## Imputing missing values
+
+```{r}
+actDiaria2 <- aggregate(activity[ ,1], by=list(activity[,4]),FUN=mean)
+sum(is.na(activity$steps))
+aggregate(activity[!is.na(activity$steps) & activity$steps>0 ,1], by=list(activity[!is.na(activity$steps) & activity$steps>0,4]),FUN=mean)
+activity$pasos <- ifelse( is.na(activity$steps) | 
+activity$steps==0,actDiaria2[actDiaria2$Group.1==as.Date(activity$date1),2],activity$steps)
+
+activity$pasos <- ifelse( is.na(activity$pasos) ,0,activity$pasos)
+activity2<-activity
+activity2$steps<-activity$pasos
+hist(activity2$steps)
+median(activity2[activity2$steps>0,1])
+
+
 ```
 
-You can also embed plots, for example:
+## Are there differences in activity patterns between weekdays and weekends?
 
-```{r, echo=FALSE}
-plot(cars)
+```{r}
+
+activity2$dia <- weekdays(activity2$date1)
+activity2$diaTrabajo <- ifelse( activity2$dia=="sábado" | activity2$dia=="domingo","weekend","weekday")
+plot(table(activity2$diaTrabajo),type = "l")
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
